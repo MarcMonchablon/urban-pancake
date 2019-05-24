@@ -8,6 +8,20 @@
   </head>
   <body>
     <h1>D3 - Glubow</h1>
+    <form class="graph-type-form">
+      <label>
+        <input type="radio" name="graph-type" value="by-day"/>
+        <span class="text">by day</span>
+      </label>
+      <label>
+        <input type="radio" name="graph-type" value="by-day-month" checked/>
+        <span class="text">by day/month</span>
+      </label>
+      <label>
+        <input type="radio" name="graph-type" value="by-month"/>
+        <span class="text">by month</span>
+      </label>
+    </form>
     <svg id="glubow" width="500" height="300"></svg>
     <script src="./main.js"></script>
   </body>
