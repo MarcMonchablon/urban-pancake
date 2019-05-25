@@ -10,15 +10,15 @@
     <h1>D3 - Glubow</h1>
     <form class="graph-type-form">
       <label>
-        <input type="radio" name="graph-type" value="by-day"/>
+        <input type="radio" name="graph-type" value="by-day" onclick="setGraphType('by-day')"/>
         <span class="text">by day</span>
       </label>
       <label>
-        <input type="radio" name="graph-type" value="by-day-month" checked/>
+        <input type="radio" name="graph-type" value="by-day-month"  onclick="setGraphType('by-day-month')" checked/>
         <span class="text">by day/month</span>
       </label>
       <label>
-        <input type="radio" name="graph-type" value="by-month"/>
+        <input type="radio" name="graph-type" value="by-month"  onclick="setGraphType('by-month')"/>
         <span class="text">by month</span>
       </label>
     </form>
