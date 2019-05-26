@@ -154,7 +154,13 @@ function onGraphUpdate() {
       .attr('fill', function(d) { return colorScale(d.commits); });
   } else if (graphType === 'by-day') {
     // Draw commits as bars along y-axis: commits aggregated by day of week
-    // TODO
+    domain.node.selectAll('rect.data-point')
+      .attr('y', function(d) { return yAxis.ordinalScale(d.day); })
+      .attr('height', yAxis.ordinalScale.bandwidth())
+      .attr('x', function(d) { return xAxis.linearScale(d.dayCommitsSoFar); })
+      .attr('width', function(d) { return xAxis.linearScale(d.commits); })
+      .attr('stroke', 'none')
+      .attr('fill', BLOCK_COLOR);
   } else if (graphType === 'by-month') {
     // Draw commits as bars along x-axis: commits aggregated by month
     domain.node.selectAll('rect.data-point')
