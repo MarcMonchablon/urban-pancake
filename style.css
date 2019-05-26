@@ -14,3 +14,7 @@ svg#glubow {
   margin: 0 2em;
   background: white;
 }
+
+svg#glubow .data-point {
+  transition: all 0.3s ease-in-out;
+}

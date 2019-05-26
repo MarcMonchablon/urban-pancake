@@ -46,7 +46,8 @@ function main() {
     width: Y_AXIS_WIDTH,
     height: domain.height,
     offset: { x: Y_AXIS_WIDTH, y: 0 },
-    scale: null,
+    ordinalScale: null,
+    linearScale: null,
     axis: null,
     node: null
   };
@@ -54,24 +55,29 @@ function main() {
     width: domain.width,
     height: X_AXIS_HEIGHT,
     offset: { x: domain.offset.x, y: domain.height },
-    scale: null,
+    ordinalScale: null,
+    linearScale: null,
     axis: null,
     node: null
   };
 
   // ...compute X/Y axis...
-  yAxis.scale = d3.scaleBand()
+  yAxis.ordinalScale = d3.scaleBand()
     .domain(DAYS)
     .range([0, domain.height])
     .padding(BLOCK_PADDING);
-  yAxis.axis = d3.axisLeft(yAxis.scale)
+  yAxis.linearScale = d3.scaleLinear()
+    .range([0, domain.height]);
+  yAxis.axis = d3.axisLeft(yAxis.ordinalScale)
     .tickFormat(function(day) { return day.substring(0, 3); });
 
-  xAxis.scale = d3.scaleBand()
+  xAxis.ordinalScale = d3.scaleBand()
     .domain(MONTHS)
     .range([0, domain.width])
     .padding(BLOCK_PADDING);
-  xAxis.axis = d3.axisBottom(xAxis.scale)
+  xAxis.linearScale = d3.scaleLinear()
+    .range([0, domain.width]);
+  xAxis.axis = d3.axisBottom(xAxis.ordinalScale)
     .tickFormat(function(month) { return month.substring(0, 3); });
 
   // ...create SVG elements...
@@ -100,14 +106,18 @@ function main() {
 
   // ... and load data !
   d3.csv("commits.csv", parseCsvDatum).then(function(rawData) {
-    const data = rawData.reduce((acc, arr) => [...acc, ...arr], []);
-    const maxCommits = data.reduce((max, d) => d.commits > max ? d.commits : max, 0);
+    const data = formatData(rawData);
+    const maxCommits = data.reduce((max, d) => Math.max(max, d.commits), 0);
+    const maxDaysCommits = data.reduce((max, d) => Math.max(max, d.dayCommitsSoFar + d.commits), 0);
+    const maxMonthsCommits = data.reduce((max, d) => Math.max(max, d.monthCommitsSoFar + d.commits), 0);
     const colorInterpolator = d3.interpolateRgb(BACKGROUND_COLOR, BLOCK_COLOR);
     //    const colorInterpolator = d3.interpolateGnBu;
     const colorScale = commits => colorInterpolator(commits/maxCommits);
 
     ctrl.data = data;
     ctrl.colorScale = colorScale;
+    yAxis.linearScale.domain([0, maxMonthsCommits]);
+    xAxis.linearScale.domain([0, maxDaysCommits]);
 
     domain.node.selectAll('rect.data-point')
       .data(data)
@@ -136,10 +146,10 @@ function onGraphUpdate() {
   if (graphType === 'by-day-month') {
     // Draw commits as tiles in 2D plan: Y is days and X is months
     domain.node.selectAll('rect.data-point')
-      .attr('y', function(d) { return yAxis.scale(d.day); })
-      .attr('x', function(d) { return xAxis.scale(d.month); })
-      .attr('width', xAxis.scale.bandwidth())
-      .attr('height', yAxis.scale.bandwidth())
+      .attr('y', function(d) { return yAxis.ordinalScale(d.day); })
+      .attr('x', function(d) { return xAxis.ordinalScale(d.month); })
+      .attr('width', xAxis.ordinalScale.bandwidth())
+      .attr('height', yAxis.ordinalScale.bandwidth())
       .attr('stroke', 'none')
       .attr('fill', function(d) { return colorScale(d.commits); });
   } else if (graphType === 'by-day') {
@@ -147,18 +157,47 @@ function onGraphUpdate() {
     // TODO
   } else if (graphType === 'by-month') {
     // Draw commits as bars along x-axis: commits aggregated by month
-    // TODO
+    domain.node.selectAll('rect.data-point')
+      .attr('x', function(d) { return xAxis.ordinalScale(d.month); })
+      .attr('width', xAxis.ordinalScale.bandwidth())
+      .attr('y', function(d) { return yAxis.height - yAxis.linearScale(d.commits + d.monthCommitsSoFar); })
+      .attr('height', function(d) { return yAxis.linearScale(d.commits); })
+      .attr('stroke', 'none')
+      .attr('fill', BLOCK_COLOR);
   } else {
     console.warn('[onGraphUpdate] Graph type ‘'+graphType+'’ not recognized.');
   }
 }
 
 function parseCsvDatum(datum) {
-  return DAYS.map(day => ({
+  return DAYS.map((day, i) => ({
     month: datum.month,
+    monthIndex: MONTHS.indexOf(datum.month),
     day: day,
-    commits: parseInt(datum[day])
+    dayIndex: i,
+    commits: parseInt(datum[day]),
+    dayCommitsSoFar: 0,
+    monthCommitsSoFar: 0
   }));
+}
+
+function formatData(rawData) {
+  const data = rawData.reduce((acc, arr) => [...acc, ...arr], []);
+  // FIXME: very inefficient algorithm (don't really care here, though)
+  data.forEach(function(datum) {
+    const dayCommitsSoFar = data
+          .filter(d => d.day === datum.day)
+          .filter(d => d.monthIndex < datum.monthIndex)
+          .reduce((acc, d) => acc + d.commits, 0);
+    const monthCommitsSoFar = data
+          .filter(d => d.month === datum.month)
+          .filter(d => d.dayIndex > datum.dayIndex)
+          .reduce((acc, d) => acc + d.commits, 0);
+
+    datum.dayCommitsSoFar = dayCommitsSoFar;
+    datum.monthCommitsSoFar = monthCommitsSoFar;
+  });
+  return data;
 }
 
 
