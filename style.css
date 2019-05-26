@@ -16,5 +16,6 @@ svg#glubow {
 }
 
 svg#glubow .data-point {
+  shape-rendering: crispedges;
   transition: all 0.3s ease-in-out;
 }
