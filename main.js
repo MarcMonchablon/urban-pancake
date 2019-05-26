@@ -66,8 +66,9 @@ function main() {
     .domain(DAYS)
     .range([0, domain.height])
     .padding(BLOCK_PADDING);
+  yAxis.padding = yAxis.ordinalScale.step() * BLOCK_PADDING;
   yAxis.linearScale = d3.scaleLinear()
-    .range([0, domain.height]);
+    .range([yAxis.padding, domain.height - 2*yAxis.padding]);
   yAxis.axis = d3.axisLeft(yAxis.ordinalScale)
     .tickFormat(function(day) { return day.substring(0, 3); });
 
@@ -75,8 +76,9 @@ function main() {
     .domain(MONTHS)
     .range([0, domain.width])
     .padding(BLOCK_PADDING);
+  xAxis.padding = xAxis.ordinalScale.step() * BLOCK_PADDING;
   xAxis.linearScale = d3.scaleLinear()
-    .range([0, domain.width]);
+    .range([xAxis.padding, domain.width - 2*xAxis.padding]);
   xAxis.axis = d3.axisBottom(xAxis.ordinalScale)
     .tickFormat(function(month) { return month.substring(0, 3); });
 
@@ -166,7 +168,7 @@ function onGraphUpdate() {
     domain.node.selectAll('rect.data-point')
       .attr('x', function(d) { return xAxis.ordinalScale(d.month); })
       .attr('width', xAxis.ordinalScale.bandwidth())
-      .attr('y', function(d) { return yAxis.height - yAxis.linearScale(d.commits + d.monthCommitsSoFar); })
+      .attr('y', function(d) { return yAxis.height - yAxis.linearScale(d.commits + d.monthCommitsSoFar) - yAxis.padding; })
       .attr('height', function(d) { return yAxis.linearScale(d.commits); })
       .attr('stroke', 'none')
       .attr('fill', BLOCK_COLOR);
